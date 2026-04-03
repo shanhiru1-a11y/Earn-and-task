@@ -58,7 +58,10 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const AdController = window.Adsgram.init({ blockId: "26784" });
+        const AdController = window.Adsgram.init({ 
+    blockId: "26784", 
+    debug: false      
+});
 
         async function showAd() {
             try {
