@@ -3,144 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Earn - Official Mini App</title>
+    <title>My Earn - Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
-        :root { --primary: #00d2ff; --bg: #0a0a0a; --card: #161616; --success: #2ecc71; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; padding: 20px; user-select: none; }
-        
-        /* Balance Card */
-        .balance-card { 
-            background: linear-gradient(145deg, #1e1e1e, #000); 
-            padding: 40px 20px; 
-            border-radius: 30px; 
-            border: 1px solid #333; 
-            margin-bottom: 25px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-        .balance-label { font-size: 14px; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase; }
-        .points { font-size: 65px; color: var(--primary); font-weight: 800; margin: 10px 0; text-shadow: 0 0 20px rgba(0,210,255,0.3); }
-
-        /* Tasks Grid */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .task-card { 
-            background: var(--card); 
-            padding: 25px 10px; 
-            border-radius: 20px; 
-            border: 1px solid #222; 
-            cursor: pointer; 
-            transition: 0.2s;
-        }
-        .task-card:active { transform: scale(0.95); background: #222; }
-        .task-card h4 { margin: 10px 0 5px 0; font-size: 16px; }
-        .task-card p { margin: 0; font-size: 12px; color: var(--success); font-weight: bold; }
-
-        /* Buttons */
-        .btn-main { 
-            background: var(--primary); 
-            color: #000; 
-            border: none; 
-            padding: 20px; 
-            border-radius: 20px; 
-            font-size: 18px; 
-            width: 100%; 
-            font-weight: bold; 
-            cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,210,255,0.3);
-        }
-        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Withdraw Section */
-        .withdraw-section { 
-            margin-top: 25px; 
-            padding: 25px; 
-            background: #111; 
-            border-radius: 25px; 
-            border: 1px dashed #444;
-            display: none; 
-        }
-        input { 
-            width: 90%; 
-            padding: 15px; 
-            margin: 15px 0; 
-            border-radius: 12px; 
-            border: 1px solid #333; 
-            background: #000; 
-            color: white; 
-            font-size: 14px;
-            text-align: center;
-        }
+        :root { --primary: #00d2ff; --bg: #0a0a0a; --card: #161616; --success: #2ecc71; --yt: #ff0000; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; padding: 15px; }
+        .balance-card { background: linear-gradient(145deg, #1e1e1e, #000); padding: 30px 15px; border-radius: 25px; border: 1px solid #333; margin-bottom: 20px; }
+        .points { font-size: 55px; color: var(--primary); font-weight: 800; margin: 5px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .task-card { background: var(--card); padding: 20px 10px; border-radius: 18px; border: 1px solid #222; }
+        .btn-main { background: var(--primary); color: #000; border: none; padding: 16px; border-radius: 15px; font-size: 16px; width: 100%; font-weight: bold; margin-top: 10px; }
+        .btn-yt { background: var(--yt); color: white; border: none; padding: 12px; border-radius: 12px; font-size: 14px; width: 100%; font-weight: bold; margin-top: 15px; text-decoration: none; display: inline-block; }
+        .withdraw-section { margin-top: 20px; padding: 20px; background: #111; border-radius: 20px; display: none; border: 1px dashed #444; }
+        input { width: 85%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: white; }
     </style>
 </head>
 <body>
 
     <div class="balance-card">
-        <div class="balance-label">Total Earnings</div>
+        <div style="font-size: 12px; opacity: 0.6;">TOTAL EARNINGS</div>
         <div class="points" id="balance">0</div>
-        <div style="color: var(--primary); font-weight: bold; letter-spacing: 1px;">POINTS</div>
+        <div style="color: var(--primary); font-weight: bold; font-size: 14px;">POINTS</div>
     </div>
 
     <div class="grid">
         <div class="task-card" onclick="showAd()">
-            <div style="font-size: 35px;">🎬</div>
+            <div style="font-size: 30px;">📺</div>
             <h4>Watch Ad</h4>
-            <p>+100 PTS</p>
+            <p style="color: var(--success); font-size: 12px;">+100 PTS</p>
         </div>
         <div class="task-card" onclick="claimDaily()">
-            <div style="font-size: 35px;">💎</div>
+            <div style="font-size: 30px;">🎁</div>
             <h4>Daily Gift</h4>
-            <p>+200 PTS</p>
+            <p style="color: var(--success); font-size: 12px;">+200 PTS</p>
         </div>
     </div>
 
     <button class="btn-main" onclick="toggleWithdraw()">Withdraw Points</button>
 
+    <a href="https://www.youtube.com/@Hiruwa-vlog" class="btn-yt">📺 Subscribe Our YouTube</a>
+
     <div id="withdrawUI" class="withdraw-section">
-        <h3 style="margin-top: 0;">Withdrawal Request</h3>
-        <p style="font-size: 12px; color: #888;">Minimum threshold: 5,000 Points</p>
-        <input type="text" id="walletAddr" placeholder="Enter Binance ID or Ton Address">
-        <button id="submitBtn" class="btn-main" style="background: var(--success);" onclick="submitWithdraw()">Submit to Admin</button>
+        <h3 style="margin: 0;">Withdraw</h3>
+        <input type="text" id="walletAddr" placeholder="Binance ID / Wallet Address">
+        <button id="submitBtn" class="btn-main" style="background: var(--success);" onclick="submitWithdraw()">Submit Request</button>
     </div>
 
     <script>
-        // Data Initialization
         let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
         document.getElementById('balance').innerText = points.toLocaleString();
-
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.headerColor = "#0a0a0a";
 
-        // AdsGram Setup
         const AdController = window.Adsgram.init({ blockId: "26784" });
 
         async function showAd() {
             try {
                 const result = await AdController.show();
-                if (result.done) {
-                    addPoints(100);
-                    tg.showAlert("Congratulations! You earned 100 points.");
-                }
-            } catch (e) {
-                tg.showAlert("Ad not ready. Please try again in 30 seconds.");
-            }
+                if (result.done) updatePoints(100);
+            } catch (e) { tg.showAlert("Ad loading... Try again!"); }
         }
 
         function claimDaily() {
-            const lastClaim = localStorage.getItem('lastDaily');
+            const last = localStorage.getItem('lastClaim');
             const today = new Date().toDateString();
-
-            if (lastClaim === today) {
-                tg.showAlert("You've already claimed your daily bonus! Come back tomorrow.");
-            } else {
-                addPoints(200);
-                localStorage.setItem('lastDaily', today);
-                tg.showAlert("Daily bonus of 200 points added!");
-            }
+            if (last === today) { tg.showAlert("Already claimed today!"); }
+            else { updatePoints(200); localStorage.setItem('lastClaim', today); tg.showAlert("200 Points added!"); }
         }
 
-        function addPoints(amount) {
+        function updatePoints(amount) {
             points += amount;
             document.getElementById('balance').innerText = points.toLocaleString();
             localStorage.setItem('userPoints', points);
@@ -149,46 +81,22 @@
         function toggleWithdraw() {
             const ui = document.getElementById('withdrawUI');
             ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
-            window.scrollTo(0, document.body.scrollHeight);
         }
 
         function submitWithdraw() {
             const addr = document.getElementById('walletAddr').value;
-            const btn = document.getElementById('submitBtn');
+            if (points < 5000) { tg.showAlert("Minimum 5,000 points required!"); return; }
+            if (!addr) { tg.showAlert("Enter Address!"); return; }
 
-            if (points < 5000) {
-                tg.showAlert("You need at least 5,000 points to withdraw.");
-                return;
-            }
-            if (!addr || addr.length < 5) {
-                tg.showAlert("Please enter a valid Wallet Address or ID.");
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerText = "Processing...";
-
-            // Admin Details
-            const adminChatId = "8193830513"; 
-            const botToken = "7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0";
+            const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
+            const msg = `💰 *New Withdraw Request*%0A👤: ${user.first_name}%0A🆔: @${user.username}%0A💵: 5,000 PTS%0A🏦: ${addr}`;
             
-            const user = tg.initDataUnsafe.user || { first_name: "User", username: "unknown" };
-            const text = `💰 *New Withdrawal Request*%0A%0A👤 User: ${user.first_name}%0A🆔 Username: @${user.username}%0A💵 Points: 5,000%0A🏦 Wallet: ${addr}`;
-
-            fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${adminChatId}&text=${text}&parse_mode=Markdown`)
+            fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${msg}&parse_mode=Markdown`)
             .then(() => {
-                tg.showConfirm("Request sent successfully! 5,000 points deducted from balance.", () => {
-                    points -= 5000;
-                    addPoints(0);
-                    toggleWithdraw();
-                    btn.disabled = false;
-                    btn.innerText = "Submit to Admin";
-                });
-            })
-            .catch(() => {
-                tg.showAlert("Error sending request. Check your connection.");
-                btn.disabled = false;
-                btn.innerText = "Submit to Admin";
+                tg.showAlert("Request sent!");
+                points -= 5000;
+                updatePoints(0);
+                toggleWithdraw();
             });
         }
     </script>
