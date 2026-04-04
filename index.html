@@ -48,14 +48,16 @@
 
         let AdController = null;
         
-        // 1. Adsgram Initialize
+        // 1. Adsgram Initialize (Debug Mode Enabled)
         function initAds() {
             if (window.Adsgram) {
-                // Oya dila thibba Block ID eka (26784)
-                AdController = window.Adsgram.init({ blockId: "26784" });
-                document.getElementById('statusMsg').innerText = "✅ Ads Ready";
+                // blockId 26784 use kara, debug: true nisa dashboard eka oni na danata
+                AdController = window.Adsgram.init({ 
+                    blockId: "26784", 
+                    debug: true 
+                });
+                document.getElementById('statusMsg').innerText = "✅ Ads Ready (Test Mode)";
             } else {
-                // Script eka load wenakan thawa poddak inna
                 setTimeout(initAds, 1000);
             }
         }
@@ -69,7 +71,7 @@
             }
 
             try {
-                // Ad eka pennala result eka ganna
+                // Ad eka pennala result eka ganna (await use kara)
                 const result = await AdController.show();
                 
                 if (result && result.done) {
@@ -81,11 +83,10 @@
                 }
             } catch (error) {
                 console.error("Adsgram Error:", error);
-                // Error eka mokakda kiyala showAlert ekakin balamu
                 if (error.error === "no_ads") {
                     tg.showAlert("No ads available right now. Try again later.");
                 } else {
-                    tg.showAlert("Something went wrong. Please check your connection.");
+                    tg.showAlert("Something went wrong. Check connection or Block ID.");
                 }
             }
         }
