@@ -1,109 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Earn - Pro</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://app.adsgram.ai/js/adsgram-ad-sdk.js"></script>
-    <style>
-        :root { --primary: #00d2ff; --bg: #0a0a0a; --card: #161616; --success: #2ecc71; --yt: #ff0000; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; text-align: center; margin: 0; padding: 15px; }
-        .balance-card { background: linear-gradient(145deg, #1e1e1e, #000); padding: 30px 15px; border-radius: 25px; border: 1px solid #333; margin-bottom: 20px; }
-        .points { font-size: 55px; color: var(--primary); font-weight: 800; margin: 5px 0; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
-        .task-card { background: var(--card); padding: 20px 10px; border-radius: 18px; border: 1px solid #222; }
-        .btn-main { background: var(--primary); color: #000; border: none; padding: 16px; border-radius: 15px; font-size: 16px; width: 100%; font-weight: bold; margin-top: 10px; }
-        .btn-yt { background: var(--yt); color: white; border: none; padding: 12px; border-radius: 12px; font-size: 14px; width: 100%; font-weight: bold; margin-top: 15px; text-decoration: none; display: inline-block; }
-        .withdraw-section { margin-top: 20px; padding: 20px; background: #111; border-radius: 20px; display: none; border: 1px dashed #444; }
-        input { width: 85%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #333; background: #000; color: white; }
-    </style>
-</head>
-<body>
+<script>
+    let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
+    document.getElementById('balance').innerText = points.toLocaleString();
+    
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-    <div class="balance-card">
-        <div style="font-size: 12px; opacity: 0.6;">TOTAL EARNINGS</div>
-        <div class="points" id="balance">0</div>
-        <div style="color: var(--primary); font-weight: bold; font-size: 14px;">POINTS</div>
-    </div>
+    // User ID eka gannawa ads load karanna kalin
+    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "unknown";
 
-    <div class="grid">
-        <div class="task-card" onclick="showAd()">
-            <div style="font-size: 30px;">📺</div>
-            <h4>Watch Ad</h4>
-            <p style="color: var(--success); font-size: 12px;">+100 PTS</p>
-        </div>
-        <div class="task-card" onclick="claimDaily()">
-            <div style="font-size: 30px;">🎁</div>
-            <h4>Daily Gift</h4>
-            <p style="color: var(--success); font-size: 12px;">+200 PTS</p>
-        </div>
-    </div>
+    // Block ID eka hariyata configure karamu
+    const AdController = window.Adsgram.init({ 
+        blockId: "26784", // Quote athule danna
+        debug: false      
+    });
 
-    <button class="btn-main" onclick="toggleWithdraw()">Withdraw Points</button>
-
-    <a href="https://youtube.com/@hiruwaofficial-b2i?si=WbqIn7nFZjXBf2wr" target="_blank" class="btn-yt">
-    Subscribe Channel
-</a>
-
-    <div id="withdrawUI" class="withdraw-section">
-        <h3 style="margin: 0;">Withdraw</h3>
-        <input type="text" id="walletAddr" placeholder="Binance ID / Wallet Address">
-        <button id="submitBtn" class="btn-main" style="background: var(--success);" onclick="submitWithdraw()">Submit Request</button>
-    </div>
-
-    <script>
-        let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
-        document.getElementById('balance').innerText = points.toLocaleString();
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-
-        const AdController = window.Adsgram.init({ 
-    blockId: "26784", 
-    debug: false      
-});
-
-        async function showAd() {
-            try {
-                const result = await AdController.show();
-                if (result.done) updatePoints(100);
-            } catch (e) { tg.showAlert("Ad loading... Try again!"); }
-        }
-
-        function claimDaily() {
-            const last = localStorage.getItem('lastClaim');
-            const today = new Date().toDateString();
-            if (last === today) { tg.showAlert("Already claimed today!"); }
-            else { updatePoints(200); localStorage.setItem('lastClaim', today); tg.showAlert("200 Points added!"); }
-        }
-
-        function updatePoints(amount) {
-            points += amount;
-            document.getElementById('balance').innerText = points.toLocaleString();
-            localStorage.setItem('userPoints', points);
-        }
-
-        function toggleWithdraw() {
-            const ui = document.getElementById('withdrawUI');
-            ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function submitWithdraw() {
-            const addr = document.getElementById('walletAddr').value;
-            if (points < 5000) { tg.showAlert("Minimum 5,000 points required!"); return; }
-            if (!addr) { tg.showAlert("Enter Address!"); return; }
-
-            const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
-            const msg = `💰 *New Withdraw Request*%0A👤: ${user.first_name}%0A🆔: @${user.username}%0A💵: 5,000 PTS%0A🏦: ${addr}`;
+    async function showAd() {
+        try {
+            // AdsGram ekata userId ekath ekka request eka yawanna
+            const result = await AdController.show({ userId: userId });
             
-            fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${msg}&parse_mode=Markdown`)
-            .then(() => {
-                tg.showAlert("Request sent!");
-                points -= 5000;
-                updatePoints(0);
-                toggleWithdraw();
-            });
+            if (result.done) {
+                updatePoints(100);
+                tg.showAlert("Congrats! 100 Points added.");
+            } else {
+                tg.showAlert("Ad closed early. No points added.");
+            }
+        } catch (e) { 
+            console.error("AdsGram Error:", e);
+            tg.showAlert("Ads are currently loading or unavailable. Please try again in 5 seconds."); 
         }
-    </script>
-</body>
-</html>
+    }
+
+    // --- Anith functions tika oyaage code eke thiyena widiyatama danna ---
+    function updatePoints(amount) {
+        points += amount;
+        document.getElementById('balance').innerText = points.toLocaleString();
+        localStorage.setItem('userPoints', points);
+    }
+    // ... claims and withdraw functions ...
+</script>
