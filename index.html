@@ -1,10 +1,114 @@
-// මේ function එකේ window.Adsgram වෙනුවට කෙලින්ම Adsgram දාලා බලන්න
-function getAdController() {
-    if (typeof Adsgram !== 'undefined') { // Check loading status
-        return Adsgram.init({ 
-            blockId: "26784", 
-            debug: true // දැනට මේක true කරලා බලන්න
-        });
-    }
-    return null;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Earn Mini App</title>
+    <style>
+        body { font-family: sans-serif; background-color: #121212; color: white; text-align: center; padding: 20px; }
+        .card { background: #d35400; padding: 30px; border-radius: 15px; margin-bottom: 20px; }
+        #balance { font-size: 3em; font-weight: bold; }
+        .btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; cursor: pointer; margin-top: 10px; }
+        .btn-blue { background: #2980b9; }
+        #withdrawUI { display: none; margin-top: 20px; background: #34495e; padding: 15px; border-radius: 10px; }
+        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <p>YOUR BALANCE</p>
+        <div id="balance">0</div>
+        <p>POINTS</p>
+    </div>
+
+    <button class="btn" onclick="showAd()">📺 WATCH AD (+100)</button>
+    <button class="btn" onclick="claimDaily()">🎁 DAILY REWARD (+200)</button>
+    <button class="btn btn-blue" onclick="toggleWithdraw()">💰 WITHDRAW</button>
+
+    <div id="withdrawUI">
+        <input type="text" id="walletAddr" placeholder="Enter Address">
+        <button class="btn" onclick="submitWithdraw()">SUBMIT</button>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://adsgram.ai/sdk-v3.js"></script>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
+        document.getElementById('balance').innerText = points.toLocaleString();
+
+        async function showAd() {
+            // Adsgram load වෙලාද බලනවා
+            if (typeof Adsgram === 'undefined') {
+                tg.showAlert("Adsgram still loading... Please wait 5 seconds and try again.");
+                return;
+            }
+
+            // Ad Controller එක මෙතනදීම හදනවා
+            const AdController = Adsgram.init({ 
+                blockId: "26784", 
+                debug: true 
+            });
+
+            try {
+                const userId = tg.initDataUnsafe?.user?.id?.toString() || "12345";
+                const result = await AdController.show({ userId: userId });
+                
+                if (result && result.done) {
+                    points += 100;
+                    updateUI();
+                    tg.showAlert("Success! 100 Points added.");
+                }
+            } catch (e) {
+                console.error(e);
+                tg.showAlert("Notice: " + (e.description || "No ads available or connection error."));
+            }
+        }
+
+        function updateUI() {
+            localStorage.setItem('userPoints', points);
+            document.getElementById('balance').innerText = points.toLocaleString();
+        }
+
+        function claimDaily() {
+            const last = localStorage.getItem('lastClaim');
+            const today = new Date().toDateString();
+            if (last === today) {
+                tg.showAlert("Already claimed today!");
+            } else {
+                points += 200;
+                localStorage.setItem('lastClaim', today);
+                updateUI();
+                tg.showAlert("200 Points added!");
+            }
+        }
+
+        function toggleWithdraw() {
+            const ui = document.getElementById('withdrawUI');
+            ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function submitWithdraw() {
+            const addr = document.getElementById('walletAddr').value;
+            if (points < 5000) { tg.showAlert("Need 5,000 points!"); return; }
+            if (!addr) { tg.showAlert("Enter address!"); return; }
+
+            const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
+            const msg = `New Withdraw: ${user.first_name} (@${user.username}) - 5000 PTS - Addr: ${addr}`;
+            
+            fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${encodeURIComponent(msg)}`)
+            .then(() => {
+                tg.showAlert("Request Sent!");
+                points -= 5000;
+                updateUI();
+                toggleWithdraw();
+            });
+        }
+    </script>
+</body>
+</html>
