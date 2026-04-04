@@ -1,102 +1,175 @@
-<script>
-    // Points load karagannawa
-    let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiruwa Mini App</title>
     
-    // Initial display update
-    window.onload = () => {
-        const balanceElement = document.getElementById('balance');
-        if (balanceElement) balanceElement.innerText = points.toLocaleString();
-    };
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://adsgram.ai/sdk-v3.js"></script>
 
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    // User ID eka gannawa
-    const userId = (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id.toString() : "12345678";
-
-    // AdController eka function ekak widiyata hadammu (safety ekata)
-    function getAdController() {
-        if (window.Adsgram) {
-            return window.Adsgram.init({ 
-                blockId: "26784", 
-                debug: true // Test karala iwara unama meka false karanna
-            });
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
         }
-        return null;
-    }
-
-    async function showAd() {
-        const AdController = getAdController();
-        if (!AdController) {
-            tg.showAlert("AdsGram script not loaded yet!");
-            return;
+        .balance-card {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
-
-        try {
-            // Loading status ekak pennana eka hodai
-            const result = await AdController.show({ userId: userId });
-            
-            // Adsgram status check
-            if (result && result.done) {
-                updatePoints(100);
-                tg.showAlert("Congrats! 100 Points added.");
-            } else {
-                tg.showAlert("You closed the ad early or it wasn't finished.");
-            }
-        } catch (e) { 
-            console.error("AdsGram Error:", e);
-            // Error messages wenas wenna puluwan (e.g. 'No ads', 'User closed')
-            let errorMsg = "No ads available or network issue.";
-            if (e.description) errorMsg = e.description;
-            tg.showAlert("Notice: " + errorMsg); 
+        #balance { font-size: 2.5em; font-weight: bold; }
+        .btn {
+            background-color: #2ecc71;
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: 0.3s;
         }
-    }
-
-    function updatePoints(amount) {
-        points += amount;
-        const balanceElement = document.getElementById('balance');
-        if (balanceElement) balanceElement.innerText = points.toLocaleString();
-        localStorage.setItem('userPoints', points);
-    }
-
-    function claimDaily() {
-        const last = localStorage.getItem('lastClaim');
-        const today = new Date().toDateString();
-        if (last === today) { 
-            tg.showAlert("Already claimed today!"); 
-        } else { 
-            updatePoints(200); 
-            localStorage.setItem('lastClaim', today); 
-            tg.showAlert("200 Points added!"); 
+        .btn:active { transform: scale(0.98); }
+        .btn-withdraw { background-color: #3498db; }
+        #withdrawUI {
+            display: none;
+            background: #2c3e50;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
         }
-    }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+    </style>
+</head>
+<body>
 
-    function toggleWithdraw() {
-        const ui = document.getElementById('withdrawUI');
-        if (ui) ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
-    }
+    <div class="balance-card">
+        <p>Your Balance</p>
+        <div id="balance">0</div>
+        <p>Points</p>
+    </div>
 
-    function submitWithdraw() {
-        const addr = document.getElementById('walletAddr').value;
-        if (points < 5000) { tg.showAlert("Minimum 5,000 points required!"); return; }
-        if (!addr) { tg.showAlert("Enter Address!"); return; }
+    <button class="btn" onclick="showAd()">📺 Watch Ad (+100)</button>
+    <button class="btn" onclick="claimDaily()">🎁 Daily Reward (+200)</button>
+    <button class="btn btn-withdraw" onclick="toggleWithdraw()">💰 Withdraw</button>
 
-        const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
-        const msg = `💰 *New Withdraw Request*%0A👤: ${user.first_name}%0A🆔: @${user.username}%0A💵: 5,000 PTS%0A🏦: ${addr}`;
+    <div id="withdrawUI">
+        <h3>Withdraw Request</h3>
+        <input type="text" id="walletAddr" placeholder="Enter Wallet Address">
+        <button class="btn" onclick="submitWithdraw()">Submit Request</button>
+    </div>
+
+    <script>
+        // --- Logic Start ---
+        const tg = window.Telegram.WebApp;
         
-        // Bot API fetch call
-        fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${msg}&parse_mode=Markdown`)
-        .then(response => {
-            if (response.ok) {
-                tg.showAlert("Request sent successfully!");
-                points -= 5000;
-                updatePoints(0); // Update balance display
-                toggleWithdraw();
-            } else {
-                tg.showAlert("Error sending request to bot.");
+        // App eka ready kiyala kiyanna (Meka nathi unoth app eka open wenne naha)
+        tg.ready();
+        tg.expand();
+
+        let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
+
+        // Display update function
+        function updatePointsDisplay() {
+            const el = document.getElementById('balance');
+            if (el) el.innerText = points.toLocaleString();
+        }
+
+        // Initial Load
+        updatePointsDisplay();
+
+        // Adsgram Init
+        function getAdController() {
+            if (window.Adsgram) {
+                return window.Adsgram.init({ 
+                    blockId: "26784", 
+                    debug: false 
+                });
             }
-        }).catch(err => {
-            tg.showAlert("Submission failed. Check connection.");
-        });
-    }
-</script>
+            return null;
+        }
+
+        async function showAd() {
+            const AdController = getAdController();
+            if (!AdController) {
+                tg.showAlert("Adsgram loading... Please wait.");
+                return;
+            }
+
+            try {
+                const userId = tg.initDataUnsafe?.user?.id?.toString() || "Guest";
+                const result = await AdController.show({ userId: userId });
+                
+                if (result && result.done) {
+                    points += 100;
+                    saveAndRefresh();
+                    tg.showConfirm("Success! 100 Points added.");
+                }
+            } catch (e) {
+                tg.showAlert("No ads available right now.");
+            }
+        }
+
+        function claimDaily() {
+            const last = localStorage.getItem('lastClaim');
+            const today = new Date().toDateString();
+            if (last === today) {
+                tg.showAlert("You already claimed today's reward!");
+            } else {
+                points += 200;
+                localStorage.setItem('lastClaim', today);
+                saveAndRefresh();
+                tg.showAlert("200 Points added to your balance!");
+            }
+        }
+
+        function saveAndRefresh() {
+            localStorage.setItem('userPoints', points);
+            updatePointsDisplay();
+        }
+
+        function toggleWithdraw() {
+            const ui = document.getElementById('withdrawUI');
+            ui.style.display = (ui.style.display === 'block') ? 'none' : 'block';
+        }
+
+        function submitWithdraw() {
+            const addr = document.getElementById('walletAddr').value;
+            if (points < 5000) { tg.showAlert("Need at least 5,000 points!"); return; }
+            if (!addr) { tg.showAlert("Please enter your address!"); return; }
+
+            const user = tg.initDataUnsafe.user || { first_name: "User", username: "unknown" };
+            const msg = `💰 *New Withdraw*\n👤: ${user.first_name}\n🆔: @${user.username}\n💵: 5,000 PTS\n🏦: ${addr}`;
+            
+            const botToken = "7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0";
+            const chatId = "8193830513";
+
+            fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`)
+            .then(res => {
+                if (res.ok) {
+                    tg.showAlert("Request sent! Points deducted.");
+                    points -= 5000;
+                    saveAndRefresh();
+                    toggleWithdraw();
+                } else {
+                    tg.showAlert("Bot Error. Try again later.");
+                }
+            }).catch(() => tg.showAlert("Network error!"));
+        }
+    </script>
+</body>
+</html>
