@@ -6,20 +6,22 @@
     <title>My Earn Mini App</title>
     <style>
         body { font-family: sans-serif; background-color: #121212; color: white; text-align: center; padding: 20px; }
-        .card { background: #d35400; padding: 30px; border-radius: 15px; margin-bottom: 20px; }
-        #balance { font-size: 3em; font-weight: bold; }
-        .btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; cursor: pointer; margin-top: 10px; }
+        .card { background: #d35400; padding: 30px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #balance { font-size: 3.5em; font-weight: bold; color: #fff; }
+        .btn { background: #27ae60; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; cursor: pointer; margin-top: 10px; font-weight: bold; transition: 0.3s; }
+        .btn:active { transform: scale(0.98); opacity: 0.8; }
         .btn-blue { background: #2980b9; }
         #withdrawUI { display: none; margin-top: 20px; background: #34495e; padding: 15px; border-radius: 10px; }
-        input { width: 90%; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: none; }
+        input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: none; outline: none; }
+        .loading-text { font-size: 12px; color: #bdc3c7; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <p>YOUR BALANCE</p>
+        <p style="margin:0; letter-spacing: 2px;">YOUR BALANCE</p>
         <div id="balance">0</div>
-        <p>POINTS</p>
+        <p style="margin:0; letter-spacing: 2px;">POINTS</p>
     </div>
 
     <button class="btn" onclick="showAd()">📺 WATCH AD (+100)</button>
@@ -27,9 +29,11 @@
     <button class="btn btn-blue" onclick="toggleWithdraw()">💰 WITHDRAW</button>
 
     <div id="withdrawUI">
-        <input type="text" id="walletAddr" placeholder="Enter Address">
-        <button class="btn" onclick="submitWithdraw()">SUBMIT</button>
+        <input type="text" id="walletAddr" placeholder="Enter Wallet Address">
+        <button class="btn" onclick="submitWithdraw()">SUBMIT REQUEST</button>
     </div>
+
+    <p class="loading-text" id="statusMsg">AdsGram Ready</p>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://adsgram.ai/js/adstg.js"></script>
@@ -42,31 +46,39 @@
         let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
         document.getElementById('balance').innerText = points.toLocaleString();
 
-        // Adsgram Initialize - App එක load වෙනකොටම මේක වෙනවා
+        // 1. Adsgram Initialize - App එක පටන් ගන්නකොටම මේක ලෝඩ් වෙනවා
         let AdController = null;
-        if (window.Adsgram) {
-            AdController = window.Adsgram.init({ blockId: "26784", debug: true });
+        
+        function initAds() {
+            if (window.Adsgram) {
+                AdController = window.Adsgram.init({ blockId: "26784", debug: false });
+                document.getElementById('statusMsg').innerText = "Ads Ready to Play";
+            } else {
+                setTimeout(initAds, 1000); // Script එක ලෝඩ් වෙනකම් තත්පරයක් ඉන්නවා
+            }
         }
+        initAds();
 
         async function showAd() {
-            // Adsgram script එක load වෙලා නැත්නම්
             if (!AdController) {
                 tg.showAlert("Adsgram is still loading... Please wait 5 seconds.");
                 return;
             }
 
             try {
-                // ඇඩ් එක පෙන්වීම
+                // 2. ඇඩ් එක පෙන්වීම
                 const result = await AdController.show();
                 
                 if (result && result.done) {
+                    // ඇඩ් එක බලලා ඉවර වුණොත් විතරක් පොයින්ට්ස් දෙනවා
                     points += 100;
                     updateUI();
-                    tg.showAlert("Success! 100 Points added.");
+                    tg.showConfirm("Success! 100 Points added to your balance.");
                 }
             } catch (e) {
                 console.error(e);
-                tg.showAlert("Notice: " + (e.description || "No ads available right now. Try again later."));
+                // ඇඩ් එකක් නැත්නම් හෝ අවුලක් නම් මේක වැටෙනවා
+                tg.showAlert("Notice: No ads available right now. Please try again in a few minutes.");
             }
         }
 
@@ -79,12 +91,12 @@
             const last = localStorage.getItem('lastClaim');
             const today = new Date().toDateString();
             if (last === today) {
-                tg.showAlert("Already claimed today!");
+                tg.showAlert("You have already claimed your reward for today!");
             } else {
                 points += 200;
                 localStorage.setItem('lastClaim', today);
                 updateUI();
-                tg.showAlert("200 Points added!");
+                tg.showAlert("Daily Reward of 200 Points added!");
             }
         }
 
@@ -95,18 +107,22 @@
 
         function submitWithdraw() {
             const addr = document.getElementById('walletAddr').value;
-            if (points < 5000) { tg.showAlert("Need 5,000 points!"); return; }
-            if (!addr) { tg.showAlert("Enter address!"); return; }
+            if (points < 5000) { tg.showAlert("Minimum withdrawal is 5,000 points!"); return; }
+            if (!addr) { tg.showAlert("Please enter your wallet address!"); return; }
 
             const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
-            const msg = `New Withdraw: ${user.first_name} (@${user.username}) - 5000 PTS - Addr: ${addr}`;
+            const msg = `Withdrawal Request:\nUser: ${user.first_name} (@${user.username})\nPoints: ${points}\nAddress: ${addr}`;
             
+            // ඔයාගේ බොට් එකට මැසේජ් එක යවනවා
             fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${encodeURIComponent(msg)}`)
             .then(() => {
-                tg.showAlert("Request Sent!");
-                points -= 5000;
+                tg.showAlert("Withdrawal request sent successfully!");
+                points = 0; // Request එක යැව්වම පොයින්ට්ස් 0 කරනවා (හෝ ඔයාට ඕන ගානක් අඩු කරන්න)
                 updateUI();
                 toggleWithdraw();
+            })
+            .catch(() => {
+                tg.showAlert("Error sending request. Check your connection.");
             });
         }
     </script>
