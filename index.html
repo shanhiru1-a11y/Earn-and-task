@@ -42,22 +42,22 @@
         let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
         document.getElementById('balance').innerText = points.toLocaleString();
 
+        // Adsgram Initialize - App එක load වෙනකොටම මේක වෙනවා
+        let AdController = null;
+        if (window.Adsgram) {
+            AdController = window.Adsgram.init({ blockId: "26784", debug: true });
+        }
+
         async function showAd() {
-            // Adsgram load වෙලාද බලනවා
-            if (typeof Adsgram === 'undefined') {
-                tg.showAlert("Adsgram still loading... Please wait 5 seconds and try again.");
+            // Adsgram script එක load වෙලා නැත්නම්
+            if (!AdController) {
+                tg.showAlert("Adsgram is still loading... Please wait 5 seconds.");
                 return;
             }
 
-            // Ad Controller එක මෙතනදීම හදනවා
-            const AdController = Adsgram.init({ 
-                blockId: "26784", 
-                debug: true 
-            });
-
             try {
-                const userId = tg.initDataUnsafe?.user?.id?.toString() || "12345";
-                const result = await AdController.show({ userId: userId });
+                // ඇඩ් එක පෙන්වීම
+                const result = await AdController.show();
                 
                 if (result && result.done) {
                     points += 100;
@@ -66,7 +66,7 @@
                 }
             } catch (e) {
                 console.error(e);
-                tg.showAlert("Notice: " + (e.description || "No ads available or connection error."));
+                tg.showAlert("Notice: " + (e.description || "No ads available right now. Try again later."));
             }
         }
 
