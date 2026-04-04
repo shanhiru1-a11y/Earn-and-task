@@ -15,6 +15,7 @@
         input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: none; outline: none; color: black; }
         .status-msg { font-size: 14px; color: #2ecc71; margin-top: 10px; font-weight: bold; }
     </style>
+    <script src="https://adsgram.ai/sdk/v1/ad-controller.js"></script>
 </head>
 <body>
 
@@ -36,7 +37,6 @@
     <div id="statusMsg" class="status-msg">Connecting to Ads...</div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://adsgram.ai/sdk/v1/ad-controller.js"></script>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -48,45 +48,58 @@
 
         let AdController = null;
         
-        // 1. Adsgram Initialize (Debug Mode Enabled)
+        // 1. Adsgram Initialize Logic
         function initAds() {
             if (window.Adsgram) {
-                // blockId 26784 use kara, debug: true nisa dashboard eka oni na danata
                 AdController = window.Adsgram.init({ 
                     blockId: "26784", 
-                    debug: true 
+                    debug: true // Test mode එකේ තියෙන්නේ. වැඩ කරනවා නම් පස්සේ මේක false කරන්න.
                 });
-                document.getElementById('statusMsg').innerText = "✅ Ads Ready (Test Mode)";
+                document.getElementById('statusMsg').innerText = "✅ Ads Ready";
+                console.log("Adsgram Initialized");
             } else {
+                console.log("Retrying Adsgram init...");
                 setTimeout(initAds, 1000);
             }
         }
-        initAds();
+        
+        // Page එක load වුණ ගමන්ම init කරන්න
+        window.onload = initAds;
 
         // 2. Watch Ad Function
         async function showAd() {
+            const statusLabel = document.getElementById('statusMsg');
+            
             if (!AdController) {
-                tg.showAlert("Adsgram is still loading... Please wait a moment.");
+                statusLabel.innerText = "⏳ SDK not ready, retrying...";
+                initAds();
+                tg.showAlert("Adsgram is still loading... Please wait 2 seconds and try again.");
                 return;
             }
 
             try {
-                // Ad eka pennala result eka ganna (await use kara)
+                statusLabel.innerText = "⏳ Loading Ad...";
                 const result = await AdController.show();
                 
                 if (result && result.done) {
                     points += 100;
                     updateUI();
                     tg.showAlert("Success! 100 Points added.");
+                    statusLabel.innerText = "✅ Ads Ready";
                 } else {
                     tg.showAlert("You skipped the ad. No points added.");
+                    statusLabel.innerText = "✅ Ads Ready";
                 }
             } catch (error) {
                 console.error("Adsgram Error:", error);
+                statusLabel.innerText = "❌ Error Loading Ad";
+                
                 if (error.error === "no_ads") {
                     tg.showAlert("No ads available right now. Try again later.");
+                } else if (error.error === "not_filled") {
+                    tg.showAlert("Ad not filled. Try again.");
                 } else {
-                    tg.showAlert("Something went wrong. Check connection or Block ID.");
+                    tg.showAlert("Check your connection or Block ID.");
                 }
             }
         }
