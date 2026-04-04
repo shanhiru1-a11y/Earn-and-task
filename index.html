@@ -1,40 +1,61 @@
 <script>
+    // Points load karagannawa
     let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
-    document.getElementById('balance').innerText = points.toLocaleString();
     
+    // Initial display update
+    window.onload = () => {
+        const balanceElement = document.getElementById('balance');
+        if (balanceElement) balanceElement.innerText = points.toLocaleString();
+    };
+
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // User ID එක ගන්නවා (පරීක්ෂා කිරීම සඳහා default එකක් දාලා තියෙනවා)
+    // User ID eka gannawa
     const userId = (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id.toString() : "12345678";
 
-    // DEBUG: TRUE දාලා තියෙන්නේ Test Ads එනවද බලන්න
-    const AdController = window.Adsgram.init({ 
-        blockId: "25866", 
-        debug: false
-    });
+    // AdController eka function ekak widiyata hadammu (safety ekata)
+    function getAdController() {
+        if (window.Adsgram) {
+            return window.Adsgram.init({ 
+                blockId: "26784", 
+                debug: true // Test karala iwara unama meka false karanna
+            });
+        }
+        return null;
+    }
 
     async function showAd() {
+        const AdController = getAdController();
+        if (!AdController) {
+            tg.showAlert("AdsGram script not loaded yet!");
+            return;
+        }
+
         try {
-            tg.showAlert("Loading Ad... Please wait."); // Loading message එකක්
+            // Loading status ekak pennana eka hodai
             const result = await AdController.show({ userId: userId });
             
-            if (result.done) {
+            // Adsgram status check
+            if (result && result.done) {
                 updatePoints(100);
                 tg.showAlert("Congrats! 100 Points added.");
             } else {
-                tg.showAlert("You closed the ad early!");
+                tg.showAlert("You closed the ad early or it wasn't finished.");
             }
         } catch (e) { 
             console.error("AdsGram Error:", e);
-            // Error එක විස්තරාත්මකව බලන්න මෙහෙම දාමු
-            tg.showAlert("Error: " + (e.message || "No ads available or network issue.")); 
+            // Error messages wenas wenna puluwan (e.g. 'No ads', 'User closed')
+            let errorMsg = "No ads available or network issue.";
+            if (e.description) errorMsg = e.description;
+            tg.showAlert("Notice: " + errorMsg); 
         }
     }
 
     function updatePoints(amount) {
         points += amount;
-        document.getElementById('balance').innerText = points.toLocaleString();
+        const balanceElement = document.getElementById('balance');
+        if (balanceElement) balanceElement.innerText = points.toLocaleString();
         localStorage.setItem('userPoints', points);
     }
 
@@ -52,7 +73,7 @@
 
     function toggleWithdraw() {
         const ui = document.getElementById('withdrawUI');
-        ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
+        if (ui) ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
     }
 
     function submitWithdraw() {
@@ -63,13 +84,19 @@
         const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
         const msg = `💰 *New Withdraw Request*%0A👤: ${user.first_name}%0A🆔: @${user.username}%0A💵: 5,000 PTS%0A🏦: ${addr}`;
         
-        // Bot API එකට request එක යවනවා
+        // Bot API fetch call
         fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${msg}&parse_mode=Markdown`)
-        .then(() => {
-            tg.showAlert("Request sent!");
-            points -= 5000;
-            updatePoints(0);
-            toggleWithdraw();
-        }).catch(err => tg.showAlert("Submission failed. Check connection."));
+        .then(response => {
+            if (response.ok) {
+                tg.showAlert("Request sent successfully!");
+                points -= 5000;
+                updatePoints(0); // Update balance display
+                toggleWithdraw();
+            } else {
+                tg.showAlert("Error sending request to bot.");
+            }
+        }).catch(err => {
+            tg.showAlert("Submission failed. Check connection.");
+        });
     }
 </script>
