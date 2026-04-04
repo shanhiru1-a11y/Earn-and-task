@@ -67,7 +67,7 @@
 
             try {
                 // 2. ඇඩ් එක පෙන්වීම
-                const result = await AdController.show();
+                const AdController = window.Adsgram.init({ blockId: "26784" });
                 
                 if (result && result.done) {
                     points += 100;
