@@ -12,7 +12,7 @@
         .btn:active { transform: scale(0.98); opacity: 0.8; }
         .btn-blue { background: #2980b9; }
         #withdrawUI { display: none; margin-top: 20px; background: #34495e; padding: 15px; border-radius: 10px; }
-        input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: none; outline: none; }
+        input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: none; outline: none; color: black; }
         .status-msg { font-size: 14px; color: #2ecc71; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
@@ -36,7 +36,7 @@
     <div id="statusMsg" class="status-msg">Connecting to Ads...</div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://adsgram.ai/js/adstg.js"></script>
+    <script src="https://adsgram.ai/sdk/v1/ad-controller.js"></script>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -46,37 +46,47 @@
         let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
         document.getElementById('balance').innerText = points.toLocaleString();
 
-        // 1. Adsgram Initialize
         let AdController = null;
         
+        // 1. Adsgram Initialize
         function initAds() {
             if (window.Adsgram) {
+                // Oya dila thibba Block ID eka (26784)
                 AdController = window.Adsgram.init({ blockId: "26784" });
                 document.getElementById('statusMsg').innerText = "✅ Ads Ready";
             } else {
+                // Script eka load wenakan thawa poddak inna
                 setTimeout(initAds, 1000);
             }
         }
         initAds();
 
+        // 2. Watch Ad Function
         async function showAd() {
             if (!AdController) {
-                tg.showAlert("Adsgram is still loading... Please wait 5 seconds.");
+                tg.showAlert("Adsgram is still loading... Please wait a moment.");
                 return;
             }
 
             try {
-                // 2. ඇඩ් එක පෙන්වීම
-                const AdController = window.Adsgram.init({ blockId: "26784" });
+                // Ad eka pennala result eka ganna
+                const result = await AdController.show();
                 
                 if (result && result.done) {
                     points += 100;
                     updateUI();
                     tg.showAlert("Success! 100 Points added.");
+                } else {
+                    tg.showAlert("You skipped the ad. No points added.");
                 }
-            } catch (e) {
-                console.error(e);
-                tg.showAlert("Notice: No ads available right now. Try again in a few minutes.");
+            } catch (error) {
+                console.error("Adsgram Error:", error);
+                // Error eka mokakda kiyala showAlert ekakin balamu
+                if (error.error === "no_ads") {
+                    tg.showAlert("No ads available right now. Try again later.");
+                } else {
+                    tg.showAlert("Something went wrong. Please check your connection.");
+                }
             }
         }
 
@@ -117,6 +127,9 @@
                 points = 0;
                 updateUI();
                 toggleWithdraw();
+            })
+            .catch(err => {
+                tg.showAlert("Error sending request. Try again.");
             });
         }
     </script>
