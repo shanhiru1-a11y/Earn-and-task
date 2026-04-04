@@ -13,7 +13,7 @@
         .btn-blue { background: #2980b9; }
         #withdrawUI { display: none; margin-top: 20px; background: #34495e; padding: 15px; border-radius: 10px; }
         input { width: 90%; padding: 12px; margin-bottom: 10px; border-radius: 5px; border: none; outline: none; }
-        .loading-text { font-size: 12px; color: #bdc3c7; margin-top: 5px; }
+        .status-msg { font-size: 14px; color: #2ecc71; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -33,7 +33,7 @@
         <button class="btn" onclick="submitWithdraw()">SUBMIT REQUEST</button>
     </div>
 
-    <p class="loading-text" id="statusMsg">AdsGram Ready</p>
+    <div id="statusMsg" class="status-msg">Connecting to Ads...</div>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://adsgram.ai/js/adstg.js"></script>
@@ -46,15 +46,15 @@
         let points = localStorage.getItem('userPoints') ? parseInt(localStorage.getItem('userPoints')) : 0;
         document.getElementById('balance').innerText = points.toLocaleString();
 
-        // 1. Adsgram Initialize - App එක පටන් ගන්නකොටම මේක ලෝඩ් වෙනවා
+        // 1. Adsgram Initialize
         let AdController = null;
         
         function initAds() {
             if (window.Adsgram) {
-                AdController = window.Adsgram.init({ blockId: "26784", debug: false });
-                document.getElementById('statusMsg').innerText = "Ads Ready to Play";
+                AdController = window.Adsgram.init({ blockId: "26784" });
+                document.getElementById('statusMsg').innerText = "✅ Ads Ready";
             } else {
-                setTimeout(initAds, 1000); // Script එක ලෝඩ් වෙනකම් තත්පරයක් ඉන්නවා
+                setTimeout(initAds, 1000);
             }
         }
         initAds();
@@ -70,15 +70,13 @@
                 const result = await AdController.show();
                 
                 if (result && result.done) {
-                    // ඇඩ් එක බලලා ඉවර වුණොත් විතරක් පොයින්ට්ස් දෙනවා
                     points += 100;
                     updateUI();
-                    tg.showConfirm("Success! 100 Points added to your balance.");
+                    tg.showAlert("Success! 100 Points added.");
                 }
             } catch (e) {
                 console.error(e);
-                // ඇඩ් එකක් නැත්නම් හෝ අවුලක් නම් මේක වැටෙනවා
-                tg.showAlert("Notice: No ads available right now. Please try again in a few minutes.");
+                tg.showAlert("Notice: No ads available right now. Try again in a few minutes.");
             }
         }
 
@@ -91,12 +89,12 @@
             const last = localStorage.getItem('lastClaim');
             const today = new Date().toDateString();
             if (last === today) {
-                tg.showAlert("You have already claimed your reward for today!");
+                tg.showAlert("Already claimed today!");
             } else {
                 points += 200;
                 localStorage.setItem('lastClaim', today);
                 updateUI();
-                tg.showAlert("Daily Reward of 200 Points added!");
+                tg.showAlert("200 Points added!");
             }
         }
 
@@ -107,22 +105,18 @@
 
         function submitWithdraw() {
             const addr = document.getElementById('walletAddr').value;
-            if (points < 5000) { tg.showAlert("Minimum withdrawal is 5,000 points!"); return; }
-            if (!addr) { tg.showAlert("Please enter your wallet address!"); return; }
+            if (points < 5000) { tg.showAlert("Need 5,000 points!"); return; }
+            if (!addr) { tg.showAlert("Enter wallet address!"); return; }
 
             const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
-            const msg = `Withdrawal Request:\nUser: ${user.first_name} (@${user.username})\nPoints: ${points}\nAddress: ${addr}`;
+            const msg = `Withdrawal Request: ${user.first_name} (@${user.username}) - ${points} PTS - Addr: ${addr}`;
             
-            // ඔයාගේ බොට් එකට මැසේජ් එක යවනවා
             fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${encodeURIComponent(msg)}`)
             .then(() => {
-                tg.showAlert("Withdrawal request sent successfully!");
-                points = 0; // Request එක යැව්වම පොයින්ට්ස් 0 කරනවා (හෝ ඔයාට ඕන ගානක් අඩු කරන්න)
+                tg.showAlert("Request Sent!");
+                points = 0;
                 updateUI();
                 toggleWithdraw();
-            })
-            .catch(() => {
-                tg.showAlert("Error sending request. Check your connection.");
             });
         }
     </script>
