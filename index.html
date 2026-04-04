@@ -5,37 +5,71 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // User ID eka gannawa ads load karanna kalin
-    const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id.toString() : "unknown";
+    // User ID එක ගන්නවා (පරීක්ෂා කිරීම සඳහා default එකක් දාලා තියෙනවා)
+    const userId = (tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user.id.toString() : "12345678";
 
-    // Block ID eka hariyata configure karamu
+    // DEBUG: TRUE දාලා තියෙන්නේ Test Ads එනවද බලන්න
     const AdController = window.Adsgram.init({ 
-        blockId: "26784", // Quote athule danna
-        debug: false      
+        blockId: "26784", 
+        debug: true 
     });
 
     async function showAd() {
         try {
-            // AdsGram ekata userId ekath ekka request eka yawanna
+            tg.showAlert("Loading Ad... Please wait."); // Loading message එකක්
             const result = await AdController.show({ userId: userId });
             
             if (result.done) {
                 updatePoints(100);
                 tg.showAlert("Congrats! 100 Points added.");
             } else {
-                tg.showAlert("Ad closed early. No points added.");
+                tg.showAlert("You closed the ad early!");
             }
         } catch (e) { 
             console.error("AdsGram Error:", e);
-            tg.showAlert("Ads are currently loading or unavailable. Please try again in 5 seconds."); 
+            // Error එක විස්තරාත්මකව බලන්න මෙහෙම දාමු
+            tg.showAlert("Error: " + (e.message || "No ads available or network issue.")); 
         }
     }
 
-    // --- Anith functions tika oyaage code eke thiyena widiyatama danna ---
     function updatePoints(amount) {
         points += amount;
         document.getElementById('balance').innerText = points.toLocaleString();
         localStorage.setItem('userPoints', points);
     }
-    // ... claims and withdraw functions ...
+
+    function claimDaily() {
+        const last = localStorage.getItem('lastClaim');
+        const today = new Date().toDateString();
+        if (last === today) { 
+            tg.showAlert("Already claimed today!"); 
+        } else { 
+            updatePoints(200); 
+            localStorage.setItem('lastClaim', today); 
+            tg.showAlert("200 Points added!"); 
+        }
+    }
+
+    function toggleWithdraw() {
+        const ui = document.getElementById('withdrawUI');
+        ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function submitWithdraw() {
+        const addr = document.getElementById('walletAddr').value;
+        if (points < 5000) { tg.showAlert("Minimum 5,000 points required!"); return; }
+        if (!addr) { tg.showAlert("Enter Address!"); return; }
+
+        const user = tg.initDataUnsafe.user || { first_name: "User", username: "N/A" };
+        const msg = `💰 *New Withdraw Request*%0A👤: ${user.first_name}%0A🆔: @${user.username}%0A💵: 5,000 PTS%0A🏦: ${addr}`;
+        
+        // Bot API එකට request එක යවනවා
+        fetch(`https://api.telegram.org/bot7737330752:AAEY9oUOnYp4_KxH-Mofp0oW0eH6o7qO0-0/sendMessage?chat_id=8193830513&text=${msg}&parse_mode=Markdown`)
+        .then(() => {
+            tg.showAlert("Request sent!");
+            points -= 5000;
+            updatePoints(0);
+            toggleWithdraw();
+        }).catch(err => tg.showAlert("Submission failed. Check connection."));
+    }
 </script>
