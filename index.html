@@ -1,13 +1,23 @@
-function showAd() {
-    if(AdController) {
-        // මෙතන test: true දැම්මම ads නැතත් Test Ad එකක් පේන්න ඕනේ
-        AdController.show({ test: true }).then(() => { 
-            points += 10; 
-            savePoints(); 
-            alert("Test Ad Success! Points Added."); 
-        }).catch((err) => { 
-            console.log(err);
-            alert("Ad error: " + JSON.stringify(err)); 
+    function showAd() {
+        if (!window.Adsgram) {
+            alert("AdsGram Script එක Load වෙලා නැහැ. කරුණාකර Internet Connection එක පරීක්ෂා කරන්න.");
+            return;
+        }
+
+        const AdController = window.Adsgram.init({ blockId: "26897" });
+
+        AdController.show().then((result) => {
+            // Ad එක සාර්ථකව බැලුවොත්
+            points += 10;
+            savePoints();
+            alert("සුභ පැතුම්! ඔබට points 10ක් ලැබුණා. 🎉");
+        }).catch((result) => {
+            // Ad එක ප්ලේ නොවෙන්න හේතුව මෙතනින් බලාගන්න පුළුවන්
+            console.error(result);
+            if (result.error) {
+                alert("Ad Error: " + result.description);
+            } else {
+                alert("දැනට පෙන්වීමට Ads නොමැත (No Fill). කරුණාකර සුළු වෙලාවකින් නැවත උත්සාහ කරන්න.");
+            }
         });
     }
-}
